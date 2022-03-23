@@ -241,7 +241,7 @@ class TelegramInput(InputChannel):
                 metadata = self.get_metadata(request)
                 
                 if self.allowed_slash_intents is not None:
-                    intent_name = re.findall(r'^/([a-zA-Z0-9]+)', text)
+                    intent_name = re.findall(r'^/([a-zA-Z0-9_.]+)', text)
                     if bool(intent_name) and (intent_name[0] not in self.allowed_slash_intents):
                         text = text[1:]
 
