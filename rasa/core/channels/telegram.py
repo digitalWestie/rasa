@@ -19,6 +19,7 @@ from rasa.core.channels.channel import InputChannel, UserMessage, OutputChannel
 from rasa.shared.constants import INTENT_MESSAGE_PREFIX
 from rasa.shared.core.constants import USER_INTENT_RESTART
 from rasa.shared.exceptions import RasaException
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,7 @@ class TelegramInput(InputChannel):
             credentials.get("access_token"),
             credentials.get("verify"),
             credentials.get("webhook_url"),
+            credentials.get("allowed_slash_intents"),
         )
 
     def __init__(
@@ -164,11 +166,13 @@ class TelegramInput(InputChannel):
         access_token: Optional[Text],
         verify: Optional[Text],
         webhook_url: Optional[Text],
+        allowed_slash_intents: Optional[List],
         debug_mode: bool = True,
     ) -> None:
         self.access_token = access_token
         self.verify = verify
         self.webhook_url = webhook_url
+        self.allowed_slash_intents = allowed_slash_intents
         self.debug_mode = debug_mode
 
     @staticmethod
@@ -235,6 +239,12 @@ class TelegramInput(InputChannel):
                         return response.text("success")
                 sender_id = msg.chat.id
                 metadata = self.get_metadata(request)
+                
+                if self.allowed_slash_intents is not None:
+                    intent_name = re.findall(r'^/([a-zA-Z0-9]+)', text)
+                    if bool(intent_name) and (intent_name[0] not in self.allowed_slash_intents):
+                        text = text[1:]
+
                 try:
                     if text == (INTENT_MESSAGE_PREFIX + USER_INTENT_RESTART):
                         await on_new_message(
